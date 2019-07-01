@@ -107,17 +107,19 @@ public class FguiToLaya : EditorWindow
         Dictionary<string, List<string>> dic = new Dictionary<string, List<string>>();
         for (int i = 0; i < files.Length; i++)
         {
-            console.log(files[i].FullName + "  " + files[i].Name);
             string filName = files[i].Name.Remove(files[i].Name.LastIndexOf("."));
             string keys = filName;
-            if (filName.Contains("_"))
+            if (files[i].Name.Substring(files[i].Name.LastIndexOf(".") + 1, (files[i].Name.Length - files[i].Name.LastIndexOf(".") - 1)).Equals("bin"))
             {
-                string[] str = filName.Split('_');
-                keys = str[0];
                 if (!dic.ContainsKey(keys))
                 {
                     dic.Add(keys, new List<string>());
                 }
+            }
+            if (filName.Contains("_"))
+            {
+                string[] str = filName.Split('_');
+                keys = str[0];
                 List<string> dicList = dic[keys];
                 dicList.Add(files[i].Name);
                 dic[keys] = dicList;

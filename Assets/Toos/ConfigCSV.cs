@@ -35,19 +35,24 @@ public class ConfigCSV
     private static infDic: Dictionary<string, Dictionary<string, any>> = new Dictionary<string, Dictionary<string, any>>();
     private curInf: Dictionary<string, any> = new Dictionary<string, any>();
 
+    public static serverInit(infDic: Dictionary<string, Dictionary<string, any>>): void {
+        this.infDic.clear();
+        this.infDic = infDic;
+    }
+
 ";
 
             string txt = File.ReadAllText(files[i].FullName, Encoding.Default);
             StringReader sr = new StringReader(txt);
-            string lines2 = sr.ReadLine();
+            //string lines2 = sr.ReadLine();
             string lines = sr.ReadLine();
-            string[] st2 = lines2.Split(',');
+            //string[] st2 = lines2.Split(',');
             string[] st = lines.Split(',');
             for (int j = 0; j < st.Length; j++)
             {
-                note += "    /**\n";
-                note += "     * " + st2[j] + "\n";
-                note += "     */\n";
+                //note += "    /**\n";
+                //note += "     * " + st2[j] + "\n";
+                //note += "     */\n";
                 note += "    public get " + st[j] + "(): any {\n";
                 note += "        return this.curInf.getValue(\"" + st[j] + "\");\n";
                 note += @"    }
