@@ -542,7 +542,7 @@ export default class FGUIResPackageConfig {
     void startProtoResInf()
     {
         // 生成协议文件
-        for (int i = 1001; i < 1021; i++)
+        for (int i = 1001; i < 1012; i++)
         {
             string fileName = "Proto" + i;
             string windPath = copyToPath + "/src/protobuf/" + fileName + ".ts";
@@ -553,16 +553,18 @@ export default class FGUIResPackageConfig {
                 note2 += "export default class " + fileName + " extends Proto {\n";
                 note2 += "    protected protoid: number = " + i + ";\n";
                 note2 += @"
-    public send<T>(data: T, encode: Function, decode: Function): void {
-";
-                note2 += "        data[\"protoid\"] = this.protoid;\n";
-                note2 += "        data[\"openid\"] = Game.localStorage.openid;\n";
-                note2 += "        data[\"password\"] = Game.localStorage.password;\n";
-                note2 += @"        this.request(data, encode, decode);
+    public send(data: Object = {}): void {
+        let sendData = {
+            protoId: this.protoid,
+            openId: Game.userData.openid,
+            password: Game.userData.password,
+            data: data,
+        }
+        this.request(sendData);
     }
     // any == T
     protected read(json: any): void {
-        
+
     }
 }";
 
