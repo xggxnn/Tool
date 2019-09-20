@@ -7,6 +7,148 @@ using System.Text;
 
 public class ConfigCSV
 {
+    public static void newCSVInit(string path)
+    {
+        DirectoryInfo direction = new DirectoryInfo(path + "/bin/res_native/csv");
+        FileInfo[] files = direction.GetFiles("*", SearchOption.TopDirectoryOnly);
+
+        int createNum = 0;
+        int repeatNum = 0;
+
+        List<string> importPath = new List<string>();
+        List<string> packNames = new List<string>();
+        List<string> fileNameList = new List<string>();
+
+        for (int i = 0; i < files.Length; i++)
+        {
+            string infName = files[i].Name.Remove(files[i].Name.LastIndexOf(".")) + "Info";
+            infName = infName.Substring(0, 1).ToUpper() + infName.Substring(1);
+            string windPath = path + "/src/csvInfo/" + infName + ".ts";
+            packNames.Add(infName);
+            fileNameList.Add(files[i].Name);
+            importPath.Add("import " + infName + " from \"./" + infName + "\";\n");
+            if (File.Exists(windPath))
+            {
+                repeatNum++;
+                continue;
+            }
+            createNum++;
+            string note = "import CSV from \"./CSV\"; \n";
+            note += "import Dictionary from \"../tool/Dictionary\";\n\n";
+            note += "export default class " + infName + " {\n";
+            string install = @"
+
+    /**
+     * 安装csv文件
+     */
+    public static installCSV(csv: CSV): void {
+        var data = csv.getAllData();
+        this._hashDic = new Dictionary<string, HeroInfo>();
+        for (var id in data) {
+            let item = data[id];
+            let dic = new Dictionary<string, string>();
+            for (var key in item) {
+                dic.add(key, item[key]);
+            }
+            this._hashDic.add(id, new HeroInfo(dic));
+        }
+    }
+";
+            note += install.Replace("HeroInfo", infName);
+            note += @"
+    /**
+     * 获取数据数量
+     */
+    public static getCount(): number {
+        return this._hashDic.count;
+    }
+    /**
+     * 通过id获取Info
+     */
+";
+            note += "    public static getInfo(id: any): " + infName + " {\n";
+            note += @"        return this._hashDic.getValue(id);
+    }
+";
+            string temStatic = @"
+    private static _hashDic: Dictionary<string, HeroInfo> = new Dictionary<string, HeroInfo>();
+    public static server(dic: Dictionary<string, string>[]) {
+        this._hashDic = new Dictionary<string, HeroInfo>();
+        for (var id in dic) {
+            let _id = dic[id].getValue('id');
+            this._hashDic.add(_id, new HeroInfo(dic[id]));
+        }
+    }";
+            
+            note += temStatic.Replace("HeroInfo", infName);
+
+            string txt = File.ReadAllText(files[i].FullName, Encoding.Default);
+            StringReader sr = new StringReader(txt);
+            string lines = sr.ReadLine();
+            string[] st = lines.Split(','); // 属性字段
+
+
+
+            note += @"
+
+    //构造函数
+    private constructor(obj: Dictionary<string, string>) {
+        //录入数据
+";
+            for (int j = 0; j < st.Length; j++)
+            {
+                note += "        this._" + st[j] + " = parseInt(obj.getValue(\"" + st[j] + "\"));\n";
+            }
+            note += "    }\n\n";
+
+            for (int j = 0; j < st.Length; j++)
+            {
+                note += "    private _" + st[j] + ": number;\n";
+                note += "    public get " + st[j] + "(): number {\n";
+                note += "        return this._" + st[j] + ";\n";
+                note += "    }\n\n";
+            }
+
+            note += @"
+
+}
+";
+
+            sr.Dispose();
+
+            StringWriter idSW = new StringWriter();
+            idSW.WriteLine(note);
+            File.WriteAllText(windPath, idSW.ToString());
+        }
+        string allPath = path + "/src/csvInfo/CSVKV.ts";
+        initkv(packNames, importPath, allPath, fileNameList);
+        console.log("配置文件生成完毕，重复数量：" + repeatNum, "新生成数量：" + createNum);
+    }
+    static void initkv(List<string> packNames, List<string> importPath, string path,List<string> fileNameList)
+    {
+        string note = "";
+        for (int i = 0; i < importPath.Count; i++)
+        {
+            note += importPath[i];
+        }
+        note += @"
+// 会自动覆盖
+export default class CSVKV {
+	public static kv = {
+";
+        note += "\n";
+        for (int i = 0; i < packNames.Count; i++)
+        {
+            note += "        \"" + fileNameList[i] + "\": " + packNames[i] + ",\n";
+        }
+        note += @"
+	}
+}";
+        StringWriter idSW3 = new StringWriter();
+        idSW3.WriteLine(note);
+        File.WriteAllText(path, idSW3.ToString());
+    }
+
     public static void csvInit(string path)
     {
         DirectoryInfo direction = new DirectoryInfo("E:/netWork/csv");
@@ -29,7 +171,7 @@ public class ConfigCSV
             //    continue;
             //}
             createNum++;
-            string note = "import Dictionary from \"../Tool/Dictionary\"; \n\n";
+            string note = "import Dictionary from \"../tool/Dictionary\"; \n\n";
             note += "export default class " + infName + " {\n";
             note += @"
     private static infDic: Dictionary<string, Dictionary<string, any>> = new Dictionary<string, Dictionary<string, any>>();
@@ -44,17 +186,18 @@ public class ConfigCSV
 
             string txt = File.ReadAllText(files[i].FullName, Encoding.Default);
             StringReader sr = new StringReader(txt);
-            //string lines2 = sr.ReadLine();
+            string lines2 = sr.ReadLine();
             string lines = sr.ReadLine();
-            //string[] st2 = lines2.Split(',');
+            string[] st2 = lines2.Split(',');
             string[] st = lines.Split(',');
             for (int j = 0; j < st.Length; j++)
             {
                 //note += "    /**\n";
                 //note += "     * " + st2[j] + "\n";
                 //note += "     */\n";
-                note += "    public get " + st[j] + "(): any {\n";
-                note += "        return this.curInf.getValue(\"" + st[j] + "\");\n";
+                string att = st2[j].FirstUpper();
+                note += "    public get " + st[j] + "(): " + st2[j] + " {\n";
+                note += "        return " + att + "(this.curInf.getValue(\"" + st[j] + "\"));\n";
                 note += @"    }
 ";
             }

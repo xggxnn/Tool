@@ -16,7 +16,7 @@ public class FguiToLaya : EditorWindow
     static FguiToLaya editor;
 
     public static string outExplortPath = "D:/Tower2Fgui/outExplort";
-    public static string copyToPath = "D:/Tower2/Tower2";
+    public static string copyToPath = "D:/Tower2/TD2";
     public static string soundPath = "D:/Tower2Fgui/assets/Sound";
     public static string fSpritePath = "D:/Tower2Fgui/assets/fSprite";
 
@@ -63,8 +63,8 @@ public class FguiToLaya : EditorWindow
         }
         if (GUILayout.Button("生成配置文件", GUILayout.Height(30)))
         {
-            copyToPath = copyToPath.Replace('\\', '/');
-            startCopeConfigs();
+            //copyToPath = copyToPath.Replace('\\', '/');
+            //startCopeConfigs();
         }
         if (GUILayout.Button("生成Proto协议及event文件", GUILayout.Height(30)))
         {
@@ -74,31 +74,70 @@ public class FguiToLaya : EditorWindow
         if (GUILayout.Button("生成csv文件", GUILayout.Height(30)))
         {
             copyToPath = copyToPath.Replace('\\', '/');
-            ConfigCSV.csvInit(copyToPath);
+            //ConfigCSV.csvInit(copyToPath);
+            ConfigCSV.newCSVInit(copyToPath);
         }
-        if (GUILayout.Button("random", GUILayout.Height(30)))
+        if (GUILayout.Button("发布前清除release文件夹", GUILayout.Height(30)))
         {
-            randddd();
+            DirectoryInfo direction = new DirectoryInfo(copyToPath + "/release");
+            DirectoryInfo[] dirs = direction.GetDirectories();
+            for (int i = 0; i < dirs.Length; i++)
+            {
+                dirs[i].Delete(true);
+            }
+            console.log("清理完毕");
+        }
+        if (GUILayout.Button("清除不需要提交的文件", GUILayout.Height(30)))
+        {
+            clearDontUpFile();
+            console.log("清除完毕");
         }
 
     }
 
-    void randddd()
+    void clearDontUpFile()
     {
-        int num = 0;
-        while (num < 5)
+        DirectoryInfo direction = new DirectoryInfo(copyToPath + "/release/wxgame");
+        DirectoryInfo[] dirs = direction.GetDirectories();
+        FileInfo[] files = direction.GetFiles("*", SearchOption.TopDirectoryOnly);
+        for (int i = 0; i < dirs.Length; i++)
         {
-            Random.InitState(2382);
-            console.log("::" + Random.Range(0, 10.0f));
-            num++;
+            if (dirs[i].Name.Equals("res_fgui"))
+            {
+                dirs[i].Delete(true);
+                console.log("清除完毕", dirs[i].Name);
+            }
+            else if (dirs[i].Name.Equals("res"))
+            {
+                DirectoryInfo[] dirs2 = dirs[i].GetDirectories();
+                for (int j = 0; j < dirs2.Length; j++)
+                {
+                    dirs2[j].Delete(true);
+                    console.log("清除完毕", dirs2[j].Name);
+                }
+            }
+            else if (dirs[i].Name.Equals("res_native"))
+            {
+                DirectoryInfo[] dirs2 = dirs[i].GetDirectories();
+                for (int j = 0; j < dirs2.Length; j++)
+                {
+                    if (dirs2[j].Name.Equals("csv"))
+                    {
+                        dirs2[j].Delete(true);
+                        console.log("清除完毕", dirs2[j].Name);
+                    }
+                }
+            }
         }
     }
+
 
     void startCope()
     {
         DirectoryInfo direction = new DirectoryInfo(outExplortPath);
         FileInfo[] files = direction.GetFiles("*", SearchOption.TopDirectoryOnly);
-        string picPath = copyToPath + "/bin/res/fgui";
+        string picPath = copyToPath + "/bin/res_native/fgui";
+        string picPath2 = copyToPath + "/bin/res_fgui";
         if (!Directory.Exists(picPath))
         {
             Directory.CreateDirectory(picPath);
@@ -108,6 +147,11 @@ public class FguiToLaya : EditorWindow
         for (int i = 0; i < files.Length; i++)
         {
             string filName = files[i].Name.Remove(files[i].Name.LastIndexOf("."));
+            string copypath = picPath;
+            if (filName.Contains("Battle") || filName.Contains("Menus"))
+            {
+                copypath = picPath2;
+            }
             string keys = filName;
             if (files[i].Name.Substring(files[i].Name.LastIndexOf(".") + 1, (files[i].Name.Length - files[i].Name.LastIndexOf(".") - 1)).Equals("bin"))
             {
@@ -124,7 +168,7 @@ public class FguiToLaya : EditorWindow
                 dicList.Add(files[i].Name);
                 dic[keys] = dicList;
             }
-            files[i].CopyTo(picPath + "/" + files[i].Name, true);
+            files[i].CopyTo(copypath + "/" + files[i].Name, true);
         }
         string con = packConfigTs(dic);
         StringWriter idSW = new StringWriter();
@@ -318,7 +362,7 @@ export class GuiPackageNames {
     string packConfigTs(Dictionary<string, List<string>> dic)
     {
         string note = "import ResPackageConfig from \"./ResPackageConfig\";\n";
-        note += "import Dictionary from \"../Tool/Dictionary\";\n";
+        note += "import Dictionary from \"../tool/Dictionary\";\n";
         note += @"
 // 此文件不要修改，会被覆盖
 export default class FGUIResPackageConfig {
@@ -344,7 +388,14 @@ export default class FGUIResPackageConfig {
             note += "\n\n\n";
             note += "        config = new ResPackageConfig();\n";
             note += "        config.packageName = \"" + item.Key + "\";\n";
-            note += "        config.resDir = \"" + "fgui" + "\";\n";
+            if (item.Key.Equals("Battle") || item.Key.Equals("Menus"))
+            {
+                note += "        config.resDir = \"" + "" + "\";\n";
+            }
+            else
+            {
+                note += "        config.resDir = \"" + "fgui" + "\";\n";
+            }
             note += "        config.resBin = \"" + item.Key + ".bin\";\n";
             List<string> lis = item.Value;
             for (int i = 0; i < lis.Count; i++)
@@ -461,88 +512,213 @@ export default class FGUIResPackageConfig {
 
     void startCopereResInf()
     {
-        DirectoryInfo direction = new DirectoryInfo(copyToPath + "/bin/res/");
-        DirectoryInfo[] dirs = direction.GetDirectories();
-        string note = @"export default class LoadFilesList {
-";
-
-        List<string> funList = new List<string>();
-
-        for (int i = 0; i < dirs.Length; i++)
+        DirectoryInfo direction = new DirectoryInfo("D:/项目文案/tower2/res_sk" + "/");
+        DirectoryInfo direction2 = new DirectoryInfo("D:/项目文案/tower2/res_effect/res_effect" + "/");
+        FileInfo[] resSk = direction.GetFiles();
+        FileInfo[] resSk2 = direction2.GetFiles();
+        List<string> enemyList = new List<string>();
+        List<string> heroList = new List<string>();
+        List<string> npcList = new List<string>();
+        List<string> effectList = new List<string>();
+        for (int i = 0; i < resSk.Length; i++)
         {
-            if (dirs[i].Name != "fgui")
+            if (resSk[i].Extension.Equals(".sk"))
             {
-
-                FileInfo[] files = dirs[i].GetFiles("*", SearchOption.TopDirectoryOnly);
-
-                Dictionary<string, List<string>> filedict = new Dictionary<string, List<string>>();
-
-                for (int j = 0; j < files.Length; j++)
+                string dirName = resSk[i].Name.Remove(resSk[i].Name.LastIndexOf("_"));
+                if (dirName.Equals("enemy"))
                 {
-                    if (files[j].Extension.Equals(".sk"))
-                    {
-                        string tt = "res/" + dirs[i].Name + "/" + files[j].Name;
-                        string ss = "        _list.push(\"" + tt + "\");\n";
-
-                        string result2 = files[j].Name.Remove(files[j].Name.LastIndexOf("_"));
-                        List<string> _list = new List<string>();
-                        if (filedict.ContainsKey(result2))
-                        {
-                            _list = filedict[result2];
-                        }
-                        _list.Add(ss);
-                        filedict[result2] = _list;
-                    }
+                    enemyList.Add("res_sk/" + resSk[i].Name);
                 }
-
-                foreach (var item in filedict)
+                else if (dirName.Equals("hero"))
                 {
-                    note += "\n    // " + dirs[i].Name + "文件夹内的" + item.Key + "类别的加载列表 \n";
-                    string nae = dirs[i].Name + "_" + item.Key + "_ResList";
-                    funList.Add(nae);
-                    note += "    static get " + nae + "() {\n";
-                    note += "        let _list: Array<string> = [];\n";
-                    List<string> _list = item.Value;
-                    for (int s = 0; s < _list.Count; s++)
-                    {
-                        note += _list[s];
-                    }
-                    note += @"        return _list;
-    }
-";
+                    heroList.Add("res_sk/" + resSk[i].Name);
                 }
-
+                else if (dirName.Equals("npc"))
+                {
+                    npcList.Add("res_sk/" + resSk[i].Name);
+                }
             }
         }
+
+        for (int i = 0; i < resSk2.Length; i++)
+        {
+            if (resSk2[i].Extension.Equals(".sk"))
+            {
+                effectList.Add("res_effect/" + resSk2[i].Name);
+            }
+        }
+        string note = "import Game from \"../Game\";\n";
+        note += @"
+export default class LoadFilesList {
+";
+
+        note += @"
+    // res_effect文件夹内的effect类别的加载列表 
+    static get res_effect_effect_ResList() {
+        let _list: Array<string> = [];";
+        note += "\n";
+        for (int i = 0; i < effectList.Count; i++)
+        {
+            note += "        _list.push(\"" + effectList[i] + "\");\n";
+        }
+        note += @"        return _list;
+    }
+
+";
+        note += @"
+    // res_effect文件夹内的effect类别的加载列表 
+    static get res_npc_ResList() {
+        let _list: Array<string> = [];";
+        note += "\n";
+        for (int i = 0; i < npcList.Count; i++)
+        {
+            note += "        _list.push(\"" + npcList[i] + "\");\n";
+        }
+        note += @"        return _list;
+    }
+
+";
+        note += @"
+    // res_sk文件夹内的enemy类别的加载列表
+    static get res_sk_enemy_ResList() {
+        let _list: Array<string> = [];";
+        note += "\n";
+        for (int i = 0; i < enemyList.Count; i++)
+        {
+            note += "        _list.push(\"" + enemyList[i] + "\");\n";
+        }
+        note += @"
+        Game.haveEnemyTem = [];
+        for (let i = _list.length - 1; i >= 0; i--) {
+            let str = _list[i];
+            let id = Number(str.substring(str.lastIndexOf('_') + 1, str.lastIndexOf('.')));
+            Game.haveEnemyTem.push(id);
+        }
+        return _list;
+    }
+
+";
+        note += @"
+    // res_sk文件夹内的hero类别的加载列表 
+    static get res_sk_hero_ResList() {
+        let _list: Array<string> = [];";
+        note += "\n";
+        for (int i = 0; i < heroList.Count; i++)
+        {
+            note += "        _list.push(\"" + heroList[i] + "\");\n";
+        }
+        note += @"
+        Game.haveHeroTem = [];
+        for (let i = _list.length - 1; i >= 0; i--) {
+            let str = _list[i];
+            let id = Number(str.substring(str.lastIndexOf('_') + 1, str.lastIndexOf('.')));
+            Game.haveHeroTem.push(id);
+        }
+        return _list;
+    }
+
+";
+
 
         note += @"
     /**
      * 加载全部资源
      */
     static get allResList() {
-        let _list: Array<string> = [];";
-        note += "\n";
-        for (int k = 0; k < funList.Count; k++)
-        {
-            note += "        _list = _list.concat(this." + funList[k] + "); \n";
-        }
-        note += @"        return _list;
+        let _list: Array<string> = [];
+        _list = _list.concat(this.res_effect_effect_ResList);
+        _list = _list.concat(this.res_npc_ResList);
+        _list = _list.concat(this.res_sk_enemy_ResList);
+        _list = _list.concat(this.res_sk_hero_ResList);
+        return _list;
     }
-";
 
-        note += @"
 }";
-
         StringWriter idSW = new StringWriter();
         idSW.WriteLine(note);
-        File.WriteAllText(copyToPath + "/src/Tool/LoadFilesList.ts", idSW.ToString());
+        File.WriteAllText(copyToPath + "/src/tool/LoadFilesList.ts", idSW.ToString());
         console.log("可加载列表生成完毕");
+        //        return;
+        //        string note = @"export default class LoadFilesList {
+        //";
+
+        //        List<string> funList = new List<string>();
+
+        //        for (int i = 0; i < dirs.Length; i++)
+        //        {
+        //            if (dirs[i].Name != "fgui")
+        //            {
+
+        //                FileInfo[] files = dirs[i].GetFiles("*", SearchOption.TopDirectoryOnly);
+
+        //                Dictionary<string, List<string>> filedict = new Dictionary<string, List<string>>();
+
+        //                for (int j = 0; j < files.Length; j++)
+        //                {
+        //                    if (files[j].Extension.Equals(".sk"))
+        //                    {
+        //                        string tt = "" + dirs[i].Name + "/" + files[j].Name;
+        //                        string ss = "        _list.push(\"" + tt + "\");\n";
+
+        //                        string result2 = files[j].Name.Remove(files[j].Name.LastIndexOf("_"));
+        //                        List<string> _list = new List<string>();
+        //                        if (filedict.ContainsKey(result2))
+        //                        {
+        //                            _list = filedict[result2];
+        //                        }
+        //                        _list.Add(ss);
+        //                        filedict[result2] = _list;
+        //                    }
+        //                }
+
+        //                foreach (var item in filedict)
+        //                {
+        //                    note += "\n    // " + dirs[i].Name + "文件夹内的" + item.Key + "类别的加载列表 \n";
+        //                    string nae = dirs[i].Name + "_" + item.Key + "_ResList";
+        //                    funList.Add(nae);
+        //                    note += "    static get " + nae + "() {\n";
+        //                    note += "        let _list: Array<string> = [];\n";
+        //                    List<string> _list = item.Value;
+        //                    for (int s = 0; s < _list.Count; s++)
+        //                    {
+        //                        note += _list[s];
+        //                    }
+        //                    note += @"        return _list;
+        //    }
+        //";
+        //                }
+
+        //            }
+        //        }
+
+        //        note += @"
+        //    /**
+        //     * 加载全部资源
+        //     */
+        //    static get allResList() {
+        //        let _list: Array<string> = [];";
+        //        note += "\n";
+        //        for (int k = 0; k < funList.Count; k++)
+        //        {
+        //            note += "        _list = _list.concat(this." + funList[k] + "); \n";
+        //        }
+        //        note += @"        return _list;
+        //    }
+        //";
+
+        //        note += @"
+        //}";
+
+        //        StringWriter idSW = new StringWriter();
+        //        idSW.WriteLine(note);
+        //        File.WriteAllText(copyToPath + "/src/Tool/LoadFilesList.ts", idSW.ToString());
+        //        console.log("可加载列表生成完毕");
     }
 
     void startProtoResInf()
     {
         // 生成协议文件
-        for (int i = 1001; i < 1012; i++)
+        for (int i = 1001; i < 1030; i++)
         {
             string fileName = "Proto" + i;
             string windPath = copyToPath + "/src/protobuf/" + fileName + ".ts";
@@ -648,8 +824,8 @@ export default class ProtoHash {
         var rowNoteId = doc.SelectSingleNode("/packageDescription");
         console.log(rowNoteId.Attributes["id"].Value);
 
-        string note = "import Fun from \"../Tool/Fun\";\n";
-        note += "import Dictionary from \"../Tool/Dictionary\";\n";
+        string note = "import Fun from \"../tool/Fun\";\n";
+        note += "import Dictionary from \"../tool/Dictionary\";\n";
         note += @"
 export default class SoundKey {
     private static _idDict: Dictionary<string, string>;

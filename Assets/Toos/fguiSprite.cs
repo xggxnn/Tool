@@ -41,8 +41,8 @@ public class fguiSprite
         var rowNoteId = doc.SelectSingleNode("/packageDescription");
         console.log(rowNoteId.Attributes["id"].Value);
 
-        string note = "import Fun from \"../Tool/Fun\";\n";
-        note += "import Dictionary from \"../Tool/Dictionary\";\n";
+        string note = "import Fun from \"../tool/Fun\";\n";
+        note += "import Dictionary from \"../tool/Dictionary\";\n";
         note += @"
 export default class SpriteKey {
     private static _idDict: Dictionary<string, string>;
