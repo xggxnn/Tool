@@ -31,11 +31,15 @@ public class FguiToLaya : EditorWindow
         EditorGUILayout.LabelField("laya项目目录文件所在的绝对路径：");
         copyToPath = EditorGUILayout.TextField(copyToPath);
 
+        if (GUILayout.Button("fgui发布前，清理fgui已发布文件", GUILayout.Height(30)))
+        {
+            fguiClearExportFile();
+        }
         if (GUILayout.Button("复制fgui资源", GUILayout.Height(30)))
         {
             outExplortPath = outExplortPath.Replace('\\', '/');
             copyToPath = copyToPath.Replace('\\', '/');
-            startCope();
+            copyClear();
         }
         if (GUILayout.Button("复制fguiCode文件", GUILayout.Height(30)))
         {
@@ -79,13 +83,7 @@ public class FguiToLaya : EditorWindow
         }
         if (GUILayout.Button("发布前清除release文件夹", GUILayout.Height(30)))
         {
-            DirectoryInfo direction = new DirectoryInfo(copyToPath + "/release");
-            DirectoryInfo[] dirs = direction.GetDirectories();
-            for (int i = 0; i < dirs.Length; i++)
-            {
-                dirs[i].Delete(true);
-            }
-            console.log("清理完毕");
+            clearRelease();
         }
         if (GUILayout.Button("清除不需要提交的文件", GUILayout.Height(30)))
         {
@@ -93,6 +91,47 @@ public class FguiToLaya : EditorWindow
             console.log("清除完毕");
         }
 
+    }
+
+    void fguiClearExportFile()
+    {
+        outExplortPath = outExplortPath.Replace('\\', '/');
+        if (Directory.Exists(outExplortPath))
+        {
+            DirectoryInfo direction = new DirectoryInfo(outExplortPath);
+            direction.Delete(true);
+        }
+        if (!Directory.Exists(outExplortPath))
+        {
+            Directory.CreateDirectory(outExplortPath);
+        }
+    }
+
+    void copyClear()
+    {
+        if (Directory.Exists(copyToPath + "/bin/res_fgui"))
+        {
+            DirectoryInfo direction = new DirectoryInfo(copyToPath + "/bin/res_fgui");
+            direction.Delete(true);
+        }
+        if (Directory.Exists(copyToPath + "/bin/res_native/fgui"))
+        {
+            DirectoryInfo direction2 = new DirectoryInfo(copyToPath + "/bin/res_native/fgui");
+            direction2.Delete(true);
+        }
+        console.log("清理完毕，开始复制............");
+        startCope();
+    }
+
+    void clearRelease()
+    {
+        DirectoryInfo direction = new DirectoryInfo(copyToPath + "/release");
+        DirectoryInfo[] dirs = direction.GetDirectories();
+        for (int i = 0; i < dirs.Length; i++)
+        {
+            dirs[i].Delete(true);
+        }
+        console.log("清理完毕");
     }
 
     void clearDontUpFile()
@@ -141,6 +180,10 @@ public class FguiToLaya : EditorWindow
         if (!Directory.Exists(picPath))
         {
             Directory.CreateDirectory(picPath);
+        }
+        if (!Directory.Exists(picPath2))
+        {
+            Directory.CreateDirectory(picPath2);
         }
         string resPackPath = copyToPath + "/src/fgui/FGUIResPackageConfig.ts";
         Dictionary<string, List<string>> dic = new Dictionary<string, List<string>>();
