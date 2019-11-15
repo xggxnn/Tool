@@ -118,4 +118,113 @@ export default class SpriteKey {
         File.WriteAllText(resPackPath, idSW.ToString());
         console.log("图片文件配置完毕");
     }
+
+
+    public static void createBigSprite(string path, string copyToPath)
+    {
+        string xmPath = path + "/package.xml";
+        string txt = File.ReadAllText(xmPath);
+        console.log(txt);
+        var doc = new XmlDocument();
+        doc.LoadXml(txt);
+        var rowNoteList = doc.SelectNodes("/packageDescription/resources");
+        List<string> nameList = new List<string>();
+        List<string> idList = new List<string>();
+        List<string> lastList = new List<string>();
+        List<string> topList = new List<string>();
+        if (rowNoteList != null)
+        {
+            foreach (XmlNode rowNode in rowNoteList)
+            {
+                var fieldNodeList = rowNode.ChildNodes;
+                foreach (XmlNode courseNode in fieldNodeList)
+                {
+                    if (courseNode.Attributes != null)
+                    {
+                        string nam = courseNode.Attributes["name"].Value;
+                        nameList.Add(nam);
+                        idList.Add(courseNode.Attributes["id"].Value);
+                        string[] result2 = nam.Split('.');
+                        lastList.Add("." + result2[result2.Length - 1]);
+                        topList.Add(nam.Remove(nam.LastIndexOf(".")));
+                    }
+                }
+            }
+        }
+        var rowNoteId = doc.SelectSingleNode("/packageDescription");
+        console.log(rowNoteId.Attributes["id"].Value);
+
+        string note = "import Fun from \"../tool/Fun\";\n";
+        note += "import Dictionary from \"../tool/Dictionary\";\n";
+        note += @"
+export default class BigPicKey {
+    private static _idDict: Dictionary<string, string>;
+    static get idDict(): Dictionary<string, string> {
+        if (!BigPicKey._idDict) {
+            BigPicKey.init();
+        }
+        return BigPicKey._idDict;
+    }
+
+
+    private static _extDict: Dictionary<string, string>;
+    static get extDict(): Dictionary<string, string> {
+        if (!BigPicKey._extDict) {
+            BigPicKey.init();
+        }
+        return BigPicKey._extDict;
+    }
+
+    public static getId(key: string): string {
+        if (!BigPicKey.idDict.hasKey(key)) {
+            console.error('BigPicKey 不存在 key=' + key);
+            return '';
+        }
+        return BigPicKey.idDict.getValue(key);
+    }
+
+    public static getUrl(key: string): string {
+        return `ui://${BigPicKey.SoundPackageId}${BigPicKey.getId(key)}`;
+    }
+
+
+    public static getPath(key: string): string {
+        return Fun.getResPath(`${BigPicKey.SoundPackageName}_${BigPicKey.getId(key)}${BigPicKey.extDict.getValue(key)}`, 'fgui');
+    }
+
+
+    private static init() {
+        let dict = BigPicKey._idDict = new Dictionary<string, string>();
+";
+        for (int i = 0; i < nameList.Count; i++)
+        {
+            note += "        dict.add(\"" + nameList[i] + "\", \"" + idList[i] + "\");\n";
+        }
+        note += "\n        let exts = BigPicKey._extDict = new Dictionary<string, string>();\n";
+        for (int i = 0; i < nameList.Count; i++)
+        {
+            note += "        exts.add(\"" + nameList[i] + "\", \"" + lastList[i] + "\");\n";
+        }
+        note += @"
+    }
+
+";
+        var rowNoteId2 = doc.SelectSingleNode("/packageDescription/publish");
+        note += "	static SoundPackageName = \"" + rowNoteId2.Attributes["name"].Value + "\";\n";
+        note += "	static SoundPackageId = \"" + rowNoteId.Attributes["id"].Value + "\";\n\n";
+
+
+        note += @"
+    
+}";
+
+
+
+
+        string resPackPath = copyToPath + "/src/fgui/BigPicKey.ts";
+        StringWriter idSW = new StringWriter();
+        idSW.WriteLine(note);
+        File.WriteAllText(resPackPath, idSW.ToString());
+        console.log("图片文件配置完毕");
+    }
 }

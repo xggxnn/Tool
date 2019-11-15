@@ -18,7 +18,8 @@ public class FguiToLaya : EditorWindow
     public static string outExplortPath = "D:/Tower2Fgui/outExplort";
     public static string copyToPath = "D:/Tower2/TD2";
     public static string soundPath = "D:/Tower2Fgui/assets/Sound";
-    public static string fSpritePath = "D:/Tower2Fgui/assets/fSprite";
+    public static string fSpritePath = "D:/Tower2Fgui/assets/FSprite";
+    public static string fBigPicPath = "D:/Tower2Fgui/assets/BigSprite";
 
     void OnGUI()
     {
@@ -28,6 +29,8 @@ public class FguiToLaya : EditorWindow
         soundPath = EditorGUILayout.TextField(soundPath);
         EditorGUILayout.LabelField("fgui图片资源文件所在的绝对路径：");
         fSpritePath = EditorGUILayout.TextField(fSpritePath);
+        EditorGUILayout.LabelField("fgui大图片 图片资源文件所在的绝对路径：");
+        fBigPicPath = EditorGUILayout.TextField(fBigPicPath);
         EditorGUILayout.LabelField("laya项目目录文件所在的绝对路径：");
         copyToPath = EditorGUILayout.TextField(copyToPath);
 
@@ -59,6 +62,12 @@ public class FguiToLaya : EditorWindow
             fSpritePath = fSpritePath.Replace('\\', '/');
             copyToPath = copyToPath.Replace('\\', '/');
             fguiSprite.createSprite(fSpritePath, copyToPath);
+        }
+        if (GUILayout.Button("复制fgui图片文件  大图片", GUILayout.Height(30)))
+        {
+            fBigPicPath = fBigPicPath.Replace('\\', '/');
+            copyToPath = copyToPath.Replace('\\', '/');
+            fguiSprite.createBigSprite(fBigPicPath, copyToPath);
         }
         if (GUILayout.Button("生成可加载文件列表", GUILayout.Height(30)))
         {
@@ -191,7 +200,7 @@ public class FguiToLaya : EditorWindow
         {
             string filName = files[i].Name.Remove(files[i].Name.LastIndexOf("."));
             string copypath = picPath;
-            if (filName.Contains("Battle") || filName.Contains("Menus"))
+            if (filName.Contains("Battle") || filName.Contains("Menus") || filName.Contains("BigSprite"))
             {
                 copypath = picPath2;
             }
@@ -431,7 +440,7 @@ export default class FGUIResPackageConfig {
             note += "\n\n\n";
             note += "        config = new ResPackageConfig();\n";
             note += "        config.packageName = \"" + item.Key + "\";\n";
-            if (item.Key.Equals("Battle") || item.Key.Equals("Menus"))
+            if (item.Key.Equals("Battle") || item.Key.Equals("Menus") || item.Key.Equals("BigSprite")) 
             {
                 note += "        config.resDir = \"" + "" + "\";\n";
             }
